@@ -131,7 +131,17 @@ func (d *updateData) ToSql() (sqlStr string, args []interface{}, err error) {
 		}
 	}
 
-	sqlStr, err = d.PlaceholderFormat.ReplacePlaceholders(sql.String())
+	sqlStr = sql.String()
+
+	return
+}
+
+func (d *updateData) FinalizeSql() (sqlStr string, args []interface{}, err error) {
+	sqlStr, args, err = d.ToSql()
+	if err != nil {
+		return
+	}
+	sqlStr, err = d.PlaceholderFormat.ReplacePlaceholders(sqlStr)
 	return
 }
 
@@ -181,16 +191,32 @@ func (b UpdateBuilder) Scan(dest ...interface{}) error {
 
 // SQL methods
 
-// ToSql builds the query into a SQL string and bound args.
+// ToSql builds the query into a SQL string.
 func (b UpdateBuilder) ToSql() (string, []interface{}, error) {
 	data := builder.GetStruct(b).(updateData)
 	return data.ToSql()
 }
 
-// MustSql builds the query into a SQL string and bound args.
+// FinalizeSql builds the query into a SQL string and bound args.
+func (b UpdateBuilder) FinalizeSql() (string, []interface{}, error) {
+	data := builder.GetStruct(b).(updateData)
+	return data.FinalizeSql()
+}
+
+// MustSql builds the query into a SQL string.
 // It panics if there are any errors.
 func (b UpdateBuilder) MustSql() (string, []interface{}) {
 	sql, args, err := b.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	return sql, args
+}
+
+// MustFinalizeSql builds the query into a SQL string and bound args.
+// It panics if there are any errors.
+func (b UpdateBuilder) MustFinalizeSql() (string, []interface{}) {
+	sql, args, err := b.FinalizeSql()
 	if err != nil {
 		panic(err)
 	}

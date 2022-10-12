@@ -49,10 +49,10 @@ func TestInsertBuilderMustSql(t *testing.T) {
 func TestInsertBuilderPlaceholders(t *testing.T) {
 	b := Insert("test").Values(1, 2)
 
-	sql, _, _ := b.PlaceholderFormat(Question).ToSql()
+	sql, _, _ := b.PlaceholderFormat(Question).FinalizeSql()
 	assert.Equal(t, "INSERT INTO test VALUES (?,?)", sql)
 
-	sql, _, _ = b.PlaceholderFormat(Dollar).ToSql()
+	sql, _, _ = b.PlaceholderFormat(Dollar).FinalizeSql()
 	assert.Equal(t, "INSERT INTO test VALUES ($1,$2)", sql)
 }
 

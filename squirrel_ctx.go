@@ -1,3 +1,4 @@
+//go:build go1.8
 // +build go1.8
 
 package squirrel
@@ -69,8 +70,8 @@ func (r *stdsqlCtxRunner) QueryRowContext(ctx context.Context, query string, arg
 }
 
 // ExecContextWith ExecContexts the SQL returned by s with db.
-func ExecContextWith(ctx context.Context, db ExecerContext, s Sqlizer) (res sql.Result, err error) {
-	query, args, err := s.ToSql()
+func ExecContextWith(ctx context.Context, db ExecerContext, s SqlFinalizer) (res sql.Result, err error) {
+	query, args, err := s.FinalizeSql()
 	if err != nil {
 		return
 	}
@@ -78,8 +79,8 @@ func ExecContextWith(ctx context.Context, db ExecerContext, s Sqlizer) (res sql.
 }
 
 // QueryContextWith QueryContexts the SQL returned by s with db.
-func QueryContextWith(ctx context.Context, db QueryerContext, s Sqlizer) (rows *sql.Rows, err error) {
-	query, args, err := s.ToSql()
+func QueryContextWith(ctx context.Context, db QueryerContext, s SqlFinalizer) (rows *sql.Rows, err error) {
+	query, args, err := s.FinalizeSql()
 	if err != nil {
 		return
 	}
@@ -87,7 +88,7 @@ func QueryContextWith(ctx context.Context, db QueryerContext, s Sqlizer) (rows *
 }
 
 // QueryRowContextWith QueryRowContexts the SQL returned by s with db.
-func QueryRowContextWith(ctx context.Context, db QueryRowerContext, s Sqlizer) RowScanner {
-	query, args, err := s.ToSql()
+func QueryRowContextWith(ctx context.Context, db QueryRowerContext, s SqlFinalizer) RowScanner {
+	query, args, err := s.FinalizeSql()
 	return &Row{RowScanner: db.QueryRowContext(ctx, query, args...), err: err}
 }

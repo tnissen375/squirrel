@@ -79,7 +79,17 @@ func (d *deleteData) ToSql() (sqlStr string, args []interface{}, err error) {
 		}
 	}
 
-	sqlStr, err = d.PlaceholderFormat.ReplacePlaceholders(sql.String())
+	sqlStr = sql.String()
+
+	return
+}
+
+func (d *deleteData) FinalizeSql() (sqlStr string, args []interface{}, err error) {
+	sqlStr, args, err = d.ToSql()
+	if err != nil {
+		return
+	}
+	sqlStr, err = d.PlaceholderFormat.ReplacePlaceholders(sqlStr)
 	return
 }
 
@@ -115,16 +125,32 @@ func (b DeleteBuilder) Exec() (sql.Result, error) {
 
 // SQL methods
 
-// ToSql builds the query into a SQL string and bound args.
+// ToSql builds the query into a SQL string.
 func (b DeleteBuilder) ToSql() (string, []interface{}, error) {
 	data := builder.GetStruct(b).(deleteData)
 	return data.ToSql()
 }
 
-// MustSql builds the query into a SQL string and bound args.
+// FinalizeSql builds the query into a SQL string and bound args.
+func (b DeleteBuilder) FinalizeSql() (string, []interface{}, error) {
+	data := builder.GetStruct(b).(deleteData)
+	return data.FinalizeSql()
+}
+
+// MustSql builds the query into a SQL string.
 // It panics if there are any errors.
 func (b DeleteBuilder) MustSql() (string, []interface{}) {
 	sql, args, err := b.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	return sql, args
+}
+
+// MustFinalizeSql builds the query into a SQL string and bound args.
+// It panics if there are any errors.
+func (b DeleteBuilder) MustFinalizeSql() (string, []interface{}) {
+	sql, args, err := b.FinalizeSql()
 	if err != nil {
 		panic(err)
 	}

@@ -55,13 +55,7 @@ func (d *selectData) QueryRow() RowScanner {
 }
 
 func (d *selectData) ToSql() (sqlStr string, args []interface{}, err error) {
-	sqlStr, args, err = d.toSqlRaw()
-	if err != nil {
-		return
-	}
-
-	sqlStr, err = d.PlaceholderFormat.ReplacePlaceholders(sqlStr)
-	return
+	return d.toSqlRaw()
 }
 
 func (d *selectData) toSqlRaw() (sqlStr string, args []interface{}, err error) {
@@ -188,6 +182,16 @@ func (d *selectData) toSqlRaw() (sqlStr string, args []interface{}, err error) {
 	return
 }
 
+func (d *selectData) FinalizeSql() (sqlStr string, args []interface{}, err error) {
+	sqlStr, args, err = d.toSqlRaw()
+	if err != nil {
+		return
+	}
+	sqlStr, err = d.PlaceholderFormat.ReplacePlaceholders(sqlStr)
+	return
+
+}
+
 // Builder
 
 // SelectBuilder builds SQL SELECT statements.
@@ -240,7 +244,7 @@ func (b SelectBuilder) Scan(dest ...interface{}) error {
 
 // SQL methods
 
-// ToSql builds the query into a SQL string and bound args.
+// ToSql builds the query into a SQL string.
 func (b SelectBuilder) ToSql() (string, []interface{}, error) {
 	data := builder.GetStruct(b).(selectData)
 	return data.ToSql()
@@ -251,10 +255,26 @@ func (b SelectBuilder) toSqlRaw() (string, []interface{}, error) {
 	return data.toSqlRaw()
 }
 
-// MustSql builds the query into a SQL string and bound args.
+// FinalizeSql builds the query into a SQL string and bound args.
+func (b SelectBuilder) FinalizeSql() (string, []interface{}, error) {
+	data := builder.GetStruct(b).(selectData)
+	return data.FinalizeSql()
+}
+
+// MustSql builds the query into a SQL string.
 // It panics if there are any errors.
 func (b SelectBuilder) MustSql() (string, []interface{}) {
 	sql, args, err := b.ToSql()
+	if err != nil {
+		panic(err)
+	}
+	return sql, args
+}
+
+// MustFinalizeSql builds the query into a SQL string and bound args.
+// It panics if there are any errors.
+func (b SelectBuilder) MustFinalizeSql() (string, []interface{}) {
+	sql, args, err := b.FinalizeSql()
 	if err != nil {
 		panic(err)
 	}
@@ -306,10 +326,18 @@ func (b SelectBuilder) Columns(columns ...string) SelectBuilder {
 	return builder.Extend(b, "Columns", parts).(SelectBuilder)
 }
 
+// RemoveColumns remove all columns from query.
+// Must add a new column with Column or Columns methods, otherwise
+// return a error.
+func (b SelectBuilder) RemoveColumns() SelectBuilder {
+	return builder.Delete(b, "Columns").(SelectBuilder)
+}
+
 // Column adds a result column to the query.
 // Unlike Columns, Column accepts args which will be bound to placeholders in
 // the columns string, for example:
-//   Column("IF(col IN ("+squirrel.Placeholders(3)+"), 1, 0) as col", 1, 2, 3)
+//
+//	Column("IF(col IN ("+squirrel.Placeholders(3)+"), 1, 0) as col", 1, 2, 3)
 func (b SelectBuilder) Column(column interface{}, args ...interface{}) SelectBuilder {
 	return builder.Append(b, "Columns", newPart(column, args...)).(SelectBuilder)
 }

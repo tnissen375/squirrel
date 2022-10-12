@@ -59,10 +59,10 @@ func TestUpdateBuilderMustSql(t *testing.T) {
 func TestUpdateBuilderPlaceholders(t *testing.T) {
 	b := Update("test").SetMap(Eq{"x": 1, "y": 2})
 
-	sql, _, _ := b.PlaceholderFormat(Question).ToSql()
+	sql, _, _ := b.PlaceholderFormat(Question).FinalizeSql()
 	assert.Equal(t, "UPDATE test SET x = ?, y = ?", sql)
 
-	sql, _, _ = b.PlaceholderFormat(Dollar).ToSql()
+	sql, _, _ = b.PlaceholderFormat(Dollar).FinalizeSql()
 	assert.Equal(t, "UPDATE test SET x = $1, y = $2", sql)
 }
 
